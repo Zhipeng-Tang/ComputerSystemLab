@@ -252,3 +252,6 @@ unsigned floatPower2(int x) {
 }
 ```
 
+### 实验结果
+
+![result](./fig/lab1_result.png)
