@@ -151,99 +151,8 @@ int logicalNeg(int x) {
 
 ### howManyBits
 
-- howManyBits - return the minimum number of bits required to represent x in
-
-- two's complement
-
-- Examples:
-
-- - howManyBits(12) = 5
-  - howManyBits(298) = 10
-  - howManyBits(-5) = 4
-  - howManyBits(0) = 1
-  - howManyBits(-1) = 1
-  - howManyBits(0x80000000) = 32
-
-- Legal ops: ! ~ & ^ | + << >>
-
-- Max ops: 90
-
-**题意理解**
-
-x 为正数，以八位为例：0011 1010，需找到最高位 1，除此以外，还需一位 0 作为符号位；
-
-x 为负数，以八位为例：1100 1001，需找到最高位 0，除此以外，还需更高一位 1 作为符号位
-
-**做法**
-
-1. 为了统一，不妨当 x 为负数时，将其取反，如上例： ∼�=00110110 , 那么也只需要找到最高位 1 后再加一位就好，这步操作如下
-
-```c
-int flag = x >> 31;    
-x = ((~flag) & x) | (flag & (~x)); 
-```
-
-\2. 利用二分的思想，先考虑高16位：
-
-**0001 1000 1100 0000 | 0000 0100 1000 0000**
-
-将 x 右移16位 x = x >> 16 ：
-
-**0000 0000 0000 0000 | 0001 1000 1100 0000**
-
-进行规格化处理 x = !! x：
-
-**0000 0000 0000 0000 | 0000 0000 0000 0001**
-
-若高 16 位有 1，处理后的 x = 0x00000001。需要的位数至少为 16，引入变量 bit_16 记录该权重。怎么做呢？将处理后的 x 左移 4 位即可
-
-```c
-int bit_16 = (!!(x >> 16)) << 4; 
-```
-
-\3. 如果高 16 位有 1 ，则将 x 右移 16 位，对右移后的 x 的低 16 位中的高 8 位进行同样的操作，从而二分地在 x 的高16位中找到最大位的 1 ；如果高 16 位没有 1 ，则 x 无需右移， 在 x 的低 16 位中的高 8 位进行同样的操作。
-
-由此可得右移操作：
-
-```c
-x = x >> bit_16;
-```
-
-\4. 同理，分别对高 8 位，4位，2位，1位进行检查，检查后进行同样的操作。
-
-\5. 最后将所有权重求和，便是最终结果
-
-**举例**
-
-- 设 x = 1101 1000 1100 0000 | 0000 0100 1000 0000
-- 负数取反：y = 0010 0111 0011 1111 | 1111 1011 0111 1111
-- 高16位右移：y = 0000 0000 0000 0000 | 0010 0111 0011 1111
-- 规格化：y = 0000 0000 0000 0000 | 0000 0000 0000 0001
-- bit_16 处理：bit_16 = y << 4 = 16 //说明 x 至少需要 16 位
-- x 右移：x = x >> bit_16 = 0000 0000 0000 0000 | 0010 0111 0011 1111
-  \>
-- 低 16 位中的高 8 位右移：y = 0000 0000 0000 0000 | 0000 0000 | 0010 0111
-- 规格化：y = 0000 0000 0000 0000 | 0000 0000 | 0000 0001
-- bit_8 处理：bit_8 = y << 3 = 8 //说明 x 又需要 8 位
-- x 右移：x = x >> bit_8 = 0000 0000 0000 0000 | 0000 0000 | 0010 0111
-  \>
-- 低 8 位的高 4 位右移：y = 0000 0000 0000 0000 | 0000 0000 | 0000 | 0010
-- 规格化：y = 0000 0000 0000 0000 | 0000 0000 | 0000 | 0001
-- bit_4 处理：bit_4 = y << 2 = 4 //说明 x 又需要 4 位
-- x 右移：x = x >> bit_4 = 0000 0000 0000 0000 | 0000 0000 | 0000 | 0010
-  \>
-- 低 4 位的高 2 位右移：y = 0000 0000 0000 0000 | 0000 0000 | 0000 | 00 | 00
-- 规格化：y = 0000 0000 0000 0000 | 0000 0000 | 0000 | 00 | 00
-- bit_2 处理：bit_2 = y << 1 = 0 //说明 x 这 4 位中的 1 在低 2 位中
-- x 右移：x = x >> bit_2 = 0000 0000 0000 0000 | 0000 0000 | 0000 | 00 | 10 //不移动
-  \>
-- 低 2 位的高 1 位右移：y = 0000 0000 0000 0000 | 0000 0000 | 0000 | 00 | 0 | 1
-- 规格化：y = 0000 0000 0000 0000 | 0000 0000 | 0000 | 00 | 0 | 1
-- bit_1 处理：bit_1 = y << 0 = 1 //说明 x 又需要1位
-- x 右移：x = x >> bit_1 = 0000 0000 0000 0000 | 0000 0000 | 0000 | 00 | 0 | 1 //不移动
-  \>
-- bit_0 处理：bit_0 = x = 1
-- bit_8 + bit_4 + bit_2 + bit_1 + bit_0 + 1= 31 与正确答案符合！
+- 从右到左找出最左边的1在第几位，然后加上一位符号位；如果是负数，则取反做相同操作。
+- 找最左边的1采用二分法。每次取高位半部分，如果高位不为0，就将数右移半部分，只关注高位；如果高位为0，则不用右移，只关注低位部分。重复这个过程，知道只有一位即可。
 
 ```c
 int howManyBits(int x) {
@@ -264,38 +173,13 @@ int howManyBits(int x) {
 }
 ```
 
-## Problem-float
-
 ### floatScale2
 
-- floatScale2 - Return bit-level equivalent of expression 2*f for
-- floating point argument f.
-- Both the argument and result are passed as unsigned int's, but
-- they are to be interpreted as the bit-level representation of
-- single-precision floating point values.
-- When argument is NaN, return argument
-- Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
-- Max ops: 30
-
-先分别取符号 s，尾数 frac，和阶码 exp
-
-```c
-unsigned s = (uf >> 31) & 0x1;
-unsigned exp = (uf >> 23) & 0xFF;
-unsigned frac = (uf & 0x7FFFFF);
-```
-
-- 非规格化的
-
-此时，exp == 0，由于此时 frac 就是尾码，直接 frac << 1 即可
-
-- 规格化的
-
-此时，exp!=0 && ！=255，exp ++即可
-
-- 特殊值
-
-根据题目要求，返回 uf
+- 分几种情况：
+  - NaN，即 exp=0xFF 的情况，直接返回 uf 即可；
+  - 非规格化数，即 exp=0 且 frac!=0 的情况，直接将 frac 左移一位即可；
+  - 0，即 exp=0 且 frac=0 的情况，用上述做法即可；
+  - 规格化数，直接 exp++ 即可。
 
 ```c
 unsigned floatScale2(unsigned uf) {
@@ -319,49 +203,11 @@ unsigned floatScale2(unsigned uf) {
 
 ### floatFloat2Int
 
-- floatFloat2Int - Return bit-level equivalent of expression (int) f
-- for floating point argument f.
-- Argument is passed as unsigned int, but
-- it is to be interpreted as the bit-level representation of a
-- single-precision floating point value.
-- Anything out of range (including NaN and infinity) should return0x80000000u.
-- Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
-- Max ops: 30
-
-![img](https://pic2.zhimg.com/80/v2-2a0cba54cfc790b5faf0fe3a320a7399_720w.webp)
-
-与上题一样，先取符号 s，尾数 frac，和阶码 exp
-
-```c
-unsigned s = (uf >> 31) & 0x1;
-unsigned exp = (uf >> 23) & 0xFF;
-unsigned frac = (uf & 0x7FFFFF);
-```
-
-- 非规格化的
-
-此时，exp == 0，而 E = 1 - Bias = 1 - 127 = -126, M < 1。显然，return 0
-
-- 规格化的
-
-此时，exp!=0 && exp！=255。我们把 frac 作为基数进行修改，最后返回 frac 。首先由于这是规格化的，所以要加上开头的“1”。
-
-```c
-int E = exp - 127;   
-frac = frac | (1 << 23); 
-```
-
-�=(−1)�×�×2�
-
-- 当 E < 0 时，显然 V < 1, return 0
-
-- - frac 为 23 位，若 E > 23, 则进行加权时，能在 frac 的末尾添加 (E - 23) 个 0
-  - 若 E < 23, 则 frac 末尾的 (23 - E)个数无法保留
-  - 若 E >= 31, 显然为 infinity ，return 0x80000000u
-
-- 特殊值 exp == 0xFF, return 0x80000000u
-
-- 还要注意考虑负数的情况，根据 s 的值进行判断，最后利用我们前面用到的取负技巧即可。
+- 分几种情况：
+  - exp>=31，表示数字超过 int 表示范围，返回 0x80000000u；
+  - exp<0，表示数字小于 1，取整后返回 0；
+  - 0<=exp<=23，则 frac 的一部分仍然是小数部分，需要右移舍去，再将更新后的 frac 最左端补 1；
+  - 23<exp<31，则 frac 全部都为整数部分，并且还需要左移补 0，再将更新后的 frac 最左端补 1。
 
 ```c
 int floatFloat2Int(unsigned uf) {
@@ -387,41 +233,11 @@ int floatFloat2Int(unsigned uf) {
 
 ### floatPower2
 
-- floatPower2 - Return bit-level equivalent of the expression 2.0^x
-- (2.0 raised to the power x) for any 32-bit integer x.
-- The unsigned value that is returned should have the identical bit
-- representation as the single-precision floating-point number 2.0^x.
-- If the result is too small to be represented as a denorm, return 0
-- If too large, return +INF.
-- Legal ops: Any integer/unsigned operations incl. ||, &&. Also if, while
-- Max ops: 30
-
-要做这道题，首先要导出浮点数非规格化和规格化分别表示的浮点数的范围。
-
-1.非规格化的
-
-此时，E = 1 - Bias = 1 - 127 = -126, 而 ����=0.00…1=2−23 , 所以非规格化浮点最小为 2−23×2−126=2−149 , ����=2−1+2−2+⋯+2−23=1−2−23 , 所以非规格化浮点最大为2−126×(1−2−23)
-
-\2. 规格化的
-
-����=1 , ����=1−127=−126 所以规格化的最小为 2−126
-
-����=1.11…11 , �����=11111110=2127 所以规格化最大为不到 2128
-
-可得下表：
-
-![img](https://pic2.zhimg.com/80/v2-33a54cf2ab159523c471bf884c2526c9_720w.webp)
-
-所以：
-
-- x > 127 时，返回 Nan
-- x <= -149时，返回 0
-- -126 <= x <=127 时，为规格化的。直接让尾码为全0，控制阶码即可，由 x = expr - bias => exp = x + 127
-- -149 < x < -126 时，为非规格化的，阶码值为 E = 1 - bias = -126。这时候只能通过控制尾码来计算。由�×2−126=2�⇒�=2�+126尾码的值是二次幂的形式，所以，尾码一定是通过一个“1”左移得到的。尾码各位以2的次幂形式的权值如下
-
-![img](https://pic2.zhimg.com/80/v2-833086860fc45c1b4d6a75121185efdd_720w.webp)
-
-设1左移n位，则 x+126 = -(23 - n)，得 n = x + 149
+- 分几种情况：
+  - x>127，超出规格化表示范围，返回 +INF；
+  - x<-148，过小，返回 0；
+  - -126<x<126，规格化数，直接令 exp=x+127，frac=0 后返回；
+  - -148<=x<=-127，非规格化数，直接令 frac=1<<(x+148)，exp=0 后返回。
 
 ```c
 unsigned floatPower2(int x) {
