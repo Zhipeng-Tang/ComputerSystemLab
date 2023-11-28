@@ -255,3 +255,32 @@ unsigned floatPower2(int x) {
 ### 实验结果
 
 ![result](./fig/lab1_result.png)
+
+## 实验二
+
+bomb21
+
+### phase1
+
+- 使用反汇编得到汇编代码
+
+  ```
+  08048b80 <phase_1>:
+   8048b80:	55                   	push   %ebp
+   8048b81:	89 e5                	mov    %esp,%ebp
+   8048b83:	83 ec 08             	sub    $0x8,%esp
+   8048b86:	c7 44 24 04 68 99 04 	movl   $0x8049968,0x4(%esp)
+   8048b8d:	08 
+   8048b8e:	8b 45 08             	mov    0x8(%ebp),%eax
+   8048b91:	89 04 24             	mov    %eax,(%esp)
+   8048b94:	e8 0e 05 00 00       	call   80490a7 <strings_not_equal>
+   8048b99:	85 c0                	test   %eax,%eax
+   8048b9b:	74 05                	je     8048ba2 <phase_1+0x22>
+   8048b9d:	e8 cc 0a 00 00       	call   804966e <explode_bomb>
+   8048ba2:	c9                   	leave  
+   8048ba3:	c3                   	ret    
+  ```
+
+- 查看地址 `0x8049968` 的值为：`Public speaking is very easy.`
+
+- 
