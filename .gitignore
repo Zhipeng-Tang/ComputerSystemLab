@@ -1,3 +1,5 @@
 *.zip
 *.pdf
 *.rar
+lab45/perflab-handout/*.o
+lab45/perflab-handout/driver
