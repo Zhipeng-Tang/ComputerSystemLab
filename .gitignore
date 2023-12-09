@@ -3,3 +3,5 @@
 *.rar
 lab45/perflab-handout/*.o
 lab45/perflab-handout/driver
+lab45/malloclab-handout/*.o
+lab45/malloclab-handout/mdriver
